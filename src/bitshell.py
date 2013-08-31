@@ -9,6 +9,14 @@ import signal
 import string
 import bitmessagemain
 
+#html2text
+import html2text
+if float(html2text.__version__) < float(3.1):
+    print 'html2text Version > 3.0 is required'
+    sys.exit(1)
+html2text.IGNORE_ANCHORS = True
+html2text.IGNORE_IMAGES = True
+
 log = logging.getLogger('bitshell')
 
 #readline support will run if we get all prints out of bitmessage
@@ -92,7 +100,11 @@ class BitShell(cmd.Cmd):
                 self._print(message['subject'].decode('utf-8'))
                 self._print('#'*80)
                 self._print('')
-                self._print(message['message'].decode('utf-8'))
+                try:
+                    self._print(html2text.html2text(message['message'].decode('utf-8')))
+                except:
+                    self._print(message['message'].decode('utf-8'))
+                
                 self._print('#'*80)
                 return
 
