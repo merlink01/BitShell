@@ -3,11 +3,10 @@ import os
 import sys
 import logging
 import cmd
-import time
 import datetime
 import signal
-import string
-import bitmessagemain
+import class_api
+log = logging.getLogger('bitshell')
 
 #html2text
 import html2text
@@ -16,8 +15,6 @@ if float(html2text.__version__) < float(3.1):
     sys.exit(1)
 html2text.IGNORE_ANCHORS = True
 html2text.IGNORE_IMAGES = True
-
-log = logging.getLogger('bitshell')
 
 #readline support will run if we get all prints out of bitmessage
 USING_READLINE = True
@@ -38,9 +35,7 @@ class BitShell(cmd.Cmd):
         signal.signal(signal.SIGINT, self.do_exit)
         
         self.stdoutEncoding = sys.stdout.encoding or locale.getpreferredencoding()
-        
-        self.api = bitmessagemain.Main()
-        self.api.start(True,True)
+        self.api = class_api.getAPI(silent=True)
 
         if not USING_READLINE:
             self._print('No readline Support detected, Autocompletion is not available on your system.')
@@ -99,7 +94,7 @@ class BitShell(cmd.Cmd):
                 self._print('#'*80)
                 self._print(message['subject'].decode('utf-8'))
                 self._print('#'*80)
-                self._print('')
+                self._print('\n')
                 try:
                     self._print(html2text.html2text(message['message'].decode('utf-8')))
                 except:
@@ -126,7 +121,7 @@ class BitShell(cmd.Cmd):
             self._print('Message Number: %s doesnt exist'%num)
             return
 
-        self.api.trashMessage(self.messages[num])
+        self.api.trashInboxMessage(self.messages[num])
         self._print('Trashed: %s'%self.messages[num])
         del self.messages[num]
     
@@ -207,7 +202,7 @@ class BitShell(cmd.Cmd):
         except:
             self._print('Sending Error, please check your Target Address')
             return
-            
+            #~ 
         if 'API Error' in answer:
             self._print(answer)
         else:
@@ -225,7 +220,7 @@ class BitShell(cmd.Cmd):
         
     def _print(self,message):
 
-        self.api.stdout.write(message.encode(self.stdoutEncoding) + '\n')
+        sys.stderr.write(message.encode(self.stdoutEncoding) + '\n')
 
     def emptyline(self):
 
@@ -271,7 +266,7 @@ class BitShell(cmd.Cmd):
                 else:
                     if self.use_rawinput:
                         try:
-                            self.api.stdout.write(self.prompt)
+                            sys.stderr.write(self.prompt)
                             line = raw_input()
                         except EOFError:
                             line = 'EOF'
@@ -306,7 +301,7 @@ class BitShell(cmd.Cmd):
         
         respond = self.api.addContact(name,adress)
         
-        if respond is not none:
+        if respond is not None:
             self._print(respond)
         else:
             self._print('User entered correct')
