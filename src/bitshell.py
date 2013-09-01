@@ -8,6 +8,10 @@ import signal
 import class_api
 log = logging.getLogger('bitshell')
 
+#A hack to let pybitmessage source directory exist in bitshell sourcedir
+if os.path.exists(os.path.abspath('src')):
+    sys.path.append(os.path.abspath('src'))
+    
 #html2text
 import html2text
 if float(html2text.__version__) < float(3.1):
@@ -64,7 +68,12 @@ class BitShell(cmd.Cmd):
             msgid = message['msgid']
             title = message['subject'].decode('utf-8').replace('\n',' ')
             self.messages[counter] = msgid
-            self._print('%03d: [%s]%s'%(counter,datetime.datetime.utcfromtimestamp(int(message['receivedTime'])),title))
+            if message['read'] == 1:
+                read = 'r'
+            else:
+                read = 'u'
+            self._print('%03d:[%s] [%s]%s'%(counter,read,datetime.datetime.utcfromtimestamp(int(message['receivedTime'])),title))
+            
         self._print('')
         
         
@@ -101,6 +110,7 @@ class BitShell(cmd.Cmd):
                     self._print(message['message'].decode('utf-8'))
                 
                 self._print('#'*80)
+                self.api.markInboxMessageAsRead(message['msgid'])
                 return
 
     def do_del(self,num):
