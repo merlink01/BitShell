@@ -2,6 +2,10 @@ import os
 import sys
 import time
 
+#A hack to let pybitmessage source directory exist in bitshell sourcedir
+if os.path.exists(os.path.abspath('src')):
+    sys.path.append(os.path.abspath('src'))
+
 def getAPI(workingdir=None,silent=False):
     
     if workingdir:
@@ -672,10 +676,11 @@ class TestFeed(unittest.TestCase):
 
         assert api.clientStatus > 0, 'Not connected'
         addr = api.createRandomAddress('senttest')
-        
+        counter = 0
         while api.getAllInboxMessages() == []:
-            ackdata = api.sendMessage(addr,addr,'test','test')
-            time.sleep(30)
+            if counter > 20:
+                ackdata = api.sendMessage(addr,addr,'test','test')
+            time.sleep(10)
             assert api.clientStatus > 0, 'Not connected'
             
         assert api.getAllInboxMessages() != [],api.getAllInboxMessages()
@@ -685,6 +690,12 @@ class TestFeed(unittest.TestCase):
         recv = api.getAllInboxMessages()[0]['toAddress']
         assert api.getInboxMessageByID(msgid) != []
         assert api.getInboxMessagesByReceiver(recv) != []
+        
+        assert api.getInboxMessageByID(msgid)[0]['read'] == 0,api.getInboxMessageByID(msgid)[0]['read']
+        api.markInboxMessageAsRead(msgid)
+        assert api.getInboxMessageByID(msgid)[0]['read'] == 1,api.getInboxMessageByID(msgid)[0]['read']
+        api.markInboxMessageAsUnread(msgid)
+        assert api.getInboxMessageByID(msgid)[0]['read'] == 0,api.getInboxMessageByID(msgid)[0]['read']
         
         api.trashInboxMessage(msgid)
         messages = api.getAllInboxMessages()
